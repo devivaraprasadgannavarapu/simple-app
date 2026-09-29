@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent none
 
   parameters {
     string(name: 'AWS_REGION', defaultValue: 'us-east-1')
@@ -29,6 +29,7 @@ pipeline {
     }
 
     stage('Build and push image') {
+      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
@@ -43,6 +44,7 @@ pipeline {
     }
 
     stage('Deploy to kubeadm cluster') {
+      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
