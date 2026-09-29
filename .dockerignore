@@ -1,0 +1,5 @@
+sample-app-kubeadm.pem
+.git
+terraform/.terraform
+terraform/*.tfstate*
+terraform/*.tfplan

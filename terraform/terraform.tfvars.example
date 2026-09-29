@@ -1,0 +1,6 @@
+aws_profile          = "dvp"
+aws_region           = "us-east-1"
+project_name         = "sample-app"
+cluster_version      = "1.33"
+ssh_key_name         = "sample-app-kubeadm"
+ssh_allowed_cidr     = "203.0.113.10/32"
