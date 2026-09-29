@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent { label 'docker-build' }
 
   parameters {
     string(name: 'AWS_REGION', defaultValue: 'us-east-1')
@@ -14,7 +14,6 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      agent { label 'docker-build' }
       steps { checkout scm }
     }
 
@@ -30,7 +29,6 @@ pipeline {
     }
 
     stage('Build and push image') {
-      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
@@ -45,7 +43,6 @@ pipeline {
     }
 
     stage('Deploy to kubeadm cluster') {
-      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
