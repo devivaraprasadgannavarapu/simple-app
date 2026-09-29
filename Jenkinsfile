@@ -54,6 +54,7 @@ pipeline {
           NAMESPACE_B64=$(base64 -w0 kubernetes/namespace.yaml)
           REMOTE_SCRIPT=$(printf '%s\n' \
             'set -eu' \
+            'export KUBECONFIG=/etc/kubernetes/admin.conf' \
             "REGISTRY=\"$REGISTRY\"" \
             'mkdir -p /tmp/sample-app' \
             "echo \"$NAMESPACE_B64\" | base64 -d > /tmp/sample-app/namespace.yaml" \
