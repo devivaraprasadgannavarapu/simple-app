@@ -10,8 +10,6 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = "${params.AWS_REGION}"
-    REGISTRY = ""
-    IMAGE_URI = ""
   }
 
   stages {
@@ -32,16 +30,15 @@ pipeline {
 
     stage('Build and push image') {
       steps {
-        script {
-          env.REGISTRY = sh(
-            script: "aws sts get-caller-identity --query Account --output text",
-            returnStdout: true
-          ).trim() + ".dkr.ecr.${params.AWS_REGION}.amazonaws.com"
-          env.IMAGE_URI = "${env.REGISTRY}/${params.ECR_REPOSITORY}:${params.IMAGE_TAG}"
-        }
-        sh 'aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"'
-        sh 'docker build --tag "$IMAGE_URI" .'
-        sh 'docker push "$IMAGE_URI"'
+        sh '''
+          set -eu
+          REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          docker build --tag "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+        '''
       }
     }
 
@@ -50,6 +47,9 @@ pipeline {
         sh '''
           set -eu
           test -n "$CONTROL_PLANE_INSTANCE_ID"
+          REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
           DEPLOYMENT_B64=$(sed "s|IMAGE_URI|$IMAGE_URI|g" kubernetes/deployment.yaml | base64 -w0)
           NAMESPACE_B64=$(base64 -w0 kubernetes/namespace.yaml)
           REMOTE_SCRIPT=$(cat <<EOF
