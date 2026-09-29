@@ -14,6 +14,7 @@ pipeline {
 
   stages {
     stage('Checkout') {
+      agent { label 'docker-build' }
       steps { checkout scm }
     }
 
@@ -74,7 +75,4 @@ pipeline {
     }
   }
 
-  post {
-    always { sh 'docker image prune --force || true' }
-  }
 }
