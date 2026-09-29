@@ -55,6 +55,7 @@ pipeline {
           REMOTE_SCRIPT=$(printf '%s\n' \
             'set -eu' \
             'export KUBECONFIG=/etc/kubernetes/admin.conf' \
+            "AWS_DEFAULT_REGION=\"$AWS_DEFAULT_REGION\"" \
             "REGISTRY=\"$REGISTRY\"" \
             'mkdir -p /tmp/sample-app' \
             "echo \"$NAMESPACE_B64\" | base64 -d > /tmp/sample-app/namespace.yaml" \
