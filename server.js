@@ -9,6 +9,15 @@ const runtime = {
   nodeIp: process.env.NODE_IP || 'unknown'
 };
 
+const infrastructure = {
+  controlPlane: '1 control plane',
+  workers: '2 worker nodes',
+  replicas: '2 application pods',
+  service: 'sample-app Service',
+  exposure: 'NodePort 32621 → port 80 → container port 8080',
+  networking: 'Calico pod network'
+};
+
 function page() {
   return `<!doctype html>
 <html lang="en">
@@ -27,6 +36,9 @@ function page() {
     .item { padding: 20px; border: 1px solid #29433e; background: #15231f; border-radius: 8px; }
     .label { color: #8ca59e; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
     .value { margin-top: 10px; color: #ffffff; font: 600 16px ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+    .section-title { margin: 44px 0 14px; color: #ffffff; font-size: 22px; }
+    .architecture { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .architecture .item { background: #182b35; border-color: #2b5562; }
     .flow { margin-top: 36px; padding-top: 24px; border-top: 1px solid #29433e; color: #c6d5d0; line-height: 1.7; }
     .flow strong { color: #65d6b4; }
   </style>
@@ -43,6 +55,15 @@ function page() {
       <div class="item"><div class="label">Pod IP</div><div class="value">${runtime.podIp}</div></div>
       <div class="item"><div class="label">Node IP</div><div class="value">${runtime.nodeIp}</div></div>
       <div class="item"><div class="label">Container port</div><div class="value">${port}</div></div>
+    </section>
+    <h2 class="section-title">Infrastructure</h2>
+    <section class="architecture" aria-label="Infrastructure details">
+      <div class="item"><div class="label">Cluster control</div><div class="value">${infrastructure.controlPlane}</div></div>
+      <div class="item"><div class="label">Compute</div><div class="value">${infrastructure.workers}</div></div>
+      <div class="item"><div class="label">Application scale</div><div class="value">${infrastructure.replicas}</div></div>
+      <div class="item"><div class="label">Service</div><div class="value">${infrastructure.service}</div></div>
+      <div class="item"><div class="label">Public entry</div><div class="value">${infrastructure.exposure}</div></div>
+      <div class="item"><div class="label">Pod networking</div><div class="value">${infrastructure.networking}</div></div>
     </section>
     <p class="flow"><strong>Request path:</strong> public load balancer → cluster service → one of the application pods → Node.js HTTP server.</p>
   </main>
