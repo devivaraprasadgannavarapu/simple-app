@@ -50,6 +50,7 @@ pipeline {
           REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
           IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
           IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
+          ECR_PASSWORD=$(aws ecr get-login-password)
           DEPLOYMENT_B64=$(sed "s|IMAGE_URI|$IMAGE_URI|g" kubernetes/deployment.yaml | base64 -w0)
           NAMESPACE_B64=$(base64 -w0 kubernetes/namespace.yaml)
           REMOTE_SCRIPT=$(printf '%s\n' \
@@ -57,11 +58,11 @@ pipeline {
             'export KUBECONFIG=/etc/kubernetes/admin.conf' \
             "AWS_DEFAULT_REGION=\"$AWS_DEFAULT_REGION\"" \
             "REGISTRY=\"$REGISTRY\"" \
+            "ECR_PASSWORD=\"$ECR_PASSWORD\"" \
             'mkdir -p /tmp/sample-app' \
             "echo \"$NAMESPACE_B64\" | base64 -d > /tmp/sample-app/namespace.yaml" \
             "echo \"$DEPLOYMENT_B64\" | base64 -d > /tmp/sample-app/deployment.yaml" \
             'kubectl apply -f /tmp/sample-app/namespace.yaml' \
-            'ECR_PASSWORD=$(aws ecr get-login-password --region "$AWS_DEFAULT_REGION")' \
             'kubectl create secret docker-registry ecr-registry --docker-server="$REGISTRY" --docker-username=AWS --docker-password="$ECR_PASSWORD" --namespace sample-app --dry-run=client -o yaml | kubectl apply -f -' \
             'kubectl apply -f /tmp/sample-app/deployment.yaml' \
             'kubectl rollout status deployment/sample-app --namespace sample-app --timeout=180s')
