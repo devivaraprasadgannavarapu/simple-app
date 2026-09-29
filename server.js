@@ -65,7 +65,7 @@ function page() {
       <div class="item"><div class="label">Public entry</div><div class="value">${infrastructure.exposure}</div></div>
       <div class="item"><div class="label">Pod networking</div><div class="value">${infrastructure.networking}</div></div>
     </section>
-    <p class="flow"><strong>Request path:</strong> public load balancer → cluster service → one of the application pods → Node.js HTTP server.</p>
+    <p class="flow"><strong>Request path:</strong> worker public IP → NodePort 32621 → sample-app Service → one of the application pods → Node.js HTTP server.</p>
   </main>
 </body>
 </html>`;
