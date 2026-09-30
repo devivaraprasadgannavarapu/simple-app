@@ -30,6 +30,20 @@ pipeline {
       }
     }
 
+    stage('Set image tag') {
+      agent { label 'docker-build' }
+      steps {
+        checkout scm
+        script {
+          env.IMAGE_TAG = sh(
+            script: 'git rev-parse --short=12 HEAD',
+            returnStdout: true
+          ).trim()
+        }
+        echo "Using image tag ${env.IMAGE_TAG}"
+      }
+    }
+
     stage('SonarQube') {
       agent { label 'sonarqube' }
       steps {
@@ -53,7 +67,7 @@ pipeline {
         checkout scm
         sh '''
           set -eu
-          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_TAG="$IMAGE_TAG"
           docker build --tag "sample-app:$IMAGE_TAG" .
         '''
       }
@@ -64,7 +78,7 @@ pipeline {
       steps {
         sh '''
           set -eu
-          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_TAG="$IMAGE_TAG"
           if command -v trivy >/dev/null 2>&1; then
             trivy image \
               --db-repository ghcr.io/aquasecurity/trivy-db:2 \
@@ -84,7 +98,7 @@ pipeline {
         sh '''
           set -eu
           REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_TAG="$IMAGE_TAG"
           IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
           aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
           docker tag "sample-app:$IMAGE_TAG" "$IMAGE_URI"
@@ -100,7 +114,7 @@ pipeline {
           set -eu
           test -n "$CONTROL_PLANE_INSTANCE_ID"
           REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          IMAGE_TAG="$IMAGE_TAG"
           IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
           ECR_PASSWORD=$(aws ecr get-login-password)
           DEPLOYMENT_B64=$(sed "s|IMAGE_URI|$IMAGE_URI|g" kubernetes/deployment.yaml | base64 -w0)
