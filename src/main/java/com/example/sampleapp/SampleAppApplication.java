@@ -52,7 +52,7 @@ class RuntimeController {
     }
 
     private String html(Map<String, String> runtime, Map<String, String> infrastructure) {
-        return """
+        String template = """
             <!doctype html>
             <html lang="en"><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
