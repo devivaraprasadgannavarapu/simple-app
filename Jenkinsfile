@@ -10,6 +10,7 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = "${params.AWS_REGION}"
+    SONAR_HOST_URL = 'http://10.0.103.192:9000'
   }
 
   stages {
@@ -32,8 +33,17 @@ pipeline {
     stage('SonarQube') {
       agent { label 'sonarqube' }
       steps {
-        sh 'sonar-scanner --version'
-        echo 'SonarScanner is available; server analysis is skipped until a SonarQube server and token are configured.'
+        checkout scm
+        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+          sh '''
+            set -eu
+            sonar-scanner \
+              -Dsonar.projectKey=sample-app \
+              -Dsonar.sources=src \
+              -Dsonar.host.url="$SONAR_HOST_URL" \
+              -Dsonar.token="$SONAR_TOKEN"
+          '''
+        }
       }
     }
 
