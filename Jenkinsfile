@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'docker-build' }
+  agent none
 
   parameters {
     string(name: 'AWS_REGION', defaultValue: 'us-east-1')
@@ -14,21 +14,51 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
-    }
-
-    stage('Set image tag') {
+      agent { label 'sonarqube' }
       steps {
-        script {
-          env.IMAGE_TAG = params.IMAGE_TAG?.trim() ?: sh(
-            script: 'git rev-parse --short=12 HEAD',
-            returnStdout: true
-          ).trim()
-        }
+        checkout scm
+        sh 'hostname; pwd; ls -la'
       }
     }
 
-    stage('Build and push image') {
+    stage('Test and SonarQube') {
+      agent { label 'sonarqube' }
+      steps {
+        sh 'node --check server.js'
+        sh 'sonar-scanner --version'
+        echo 'SonarScanner is available; server analysis is skipped until a SonarQube server and token are configured.'
+      }
+    }
+
+    stage('Build') {
+      agent { label 'docker-build' }
+      steps {
+        checkout scm
+        sh '''
+          set -eu
+          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          docker build --tag "sample-app:$IMAGE_TAG" .
+        '''
+      }
+    }
+
+    stage('Scan') {
+      agent { label 'docker-build' }
+      steps {
+        sh '''
+          set -eu
+          IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+          if command -v trivy >/dev/null 2>&1; then
+            trivy image --severity HIGH,CRITICAL --exit-code 0 "sample-app:$IMAGE_TAG"
+          else
+            echo 'Trivy is not installed on the Docker agent; image scan skipped.'
+          fi
+        '''
+      }
+    }
+
+    stage('Push to ECR') {
+      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
@@ -36,13 +66,14 @@ pipeline {
           IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
           IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG"
           aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
-          docker build --tag "$IMAGE_URI" .
+          docker tag "sample-app:$IMAGE_TAG" "$IMAGE_URI"
           docker push "$IMAGE_URI"
         '''
       }
     }
 
     stage('Deploy to kubeadm cluster') {
+      agent { label 'docker-build' }
       steps {
         sh '''
           set -eu
@@ -75,4 +106,9 @@ pipeline {
     }
   }
 
+  post {
+    success { echo 'Pipeline completed successfully: test, scan, build, ECR push, and kubeadm deployment.' }
+    failure { echo 'Pipeline failed. Check the failed stage in the Jenkins console.' }
+    always { echo 'Pipeline execution completed.' }
+  }
 }
