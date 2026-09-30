@@ -1,6 +1,6 @@
 # Sample Application
 
-This application shows where a request is running inside a three-node Kubernetes cluster. It displays the current pod name, namespace, pod IP, node name, and node IP.
+This Spring Boot application shows where a request is running inside a three-node Kubernetes cluster. It displays the current pod name, namespace, pod IP, node name, and node IP.
 
 ## Public access
 
@@ -39,9 +39,9 @@ Public load balancer
     v
 Kubernetes Service: sample-app:80
     |
-    +--> Pod replica 1: Node.js server on port 8080
+    +--> Pod replica 1: Spring Boot server on port 8080
     |
-    +--> Pod replica 2: Node.js server on port 8080
+    +--> Pod replica 2: Spring Boot server on port 8080
 ```
 
 The service selects pods using the label `app: sample-app`. Kubernetes distributes requests between the two replicas. Each pod gets its own IP and runs on one of the worker nodes. Refreshing the page can show a different pod or node.
@@ -58,15 +58,16 @@ The page reads these values from environment variables supplied by Kubernetes:
 ## Delivery flow
 
 1. Jenkins checks out the application source.
-2. Jenkins builds the Node.js container image.
+2. Jenkins runs Maven tests and builds the Spring Boot JAR container image.
 3. Jenkins pushes the image to the private container registry.
 4. Jenkins connects to the cluster control plane and applies the namespace and application manifests.
 5. Kubernetes downloads the image, starts two replicas, and exposes them through the public load balancer.
 
 ## Files
 
-- `server.js`: HTTP server, health endpoint, and runtime information page.
-- `Dockerfile`: small production container image.
+- `pom.xml`: Spring Boot and Maven build configuration.
+- `src/main/java/com/example/sampleapp/SampleAppApplication.java`: HTTP server, health endpoint, and runtime information page.
+- `Dockerfile`: multi-stage JAR build and production Java container image.
 - `kubernetes/deployment.yaml`: two replicas, runtime metadata, health check, and public service.
 - `kubernetes/namespace.yaml`: application namespace.
 - `Jenkinsfile`: build, registry push, and cluster deployment pipeline.

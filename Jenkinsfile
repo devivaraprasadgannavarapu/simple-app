@@ -21,10 +21,17 @@ pipeline {
       }
     }
 
-    stage('Test and SonarQube') {
+    stage('Test') {
+      agent { label 'docker-build' }
+      steps {
+        checkout scm
+        sh 'docker run --rm -v "$PWD:/app" -w /app maven:3.9-eclipse-temurin-21 mvn -q test'
+      }
+    }
+
+    stage('SonarQube') {
       agent { label 'sonarqube' }
       steps {
-        sh 'node --check server.js'
         sh 'sonar-scanner --version'
         echo 'SonarScanner is available; server analysis is skipped until a SonarQube server and token are configured.'
       }
