@@ -66,7 +66,11 @@ pipeline {
           set -eu
           IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
           if command -v trivy >/dev/null 2>&1; then
-            trivy image --severity HIGH,CRITICAL --exit-code 0 "sample-app:$IMAGE_TAG"
+            trivy image \
+              --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              "sample-app:$IMAGE_TAG"
           else
             echo 'Trivy is not installed on the Docker agent; image scan skipped.'
           fi
