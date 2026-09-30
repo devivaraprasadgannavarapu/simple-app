@@ -76,12 +76,14 @@ class RuntimeController {
             <div class="eyebrow">Sample application · live runtime</div>
             <h1>Running inside the cluster.</h1>
             <p class="intro">This page is served by the Java application pod currently handling your request.</p>
-            <section class="grid" aria-label="Runtime details">%s</section>
+            <section class="grid" aria-label="Runtime details">__RUNTIME_CARDS__</section>
             <h2>Infrastructure</h2>
-            <section class="grid architecture" aria-label="Infrastructure details">%s</section>
+            <section class="grid architecture" aria-label="Infrastructure details">__INFRASTRUCTURE_CARDS__</section>
             <p class="flow"><strong>Request path:</strong> worker public IP -> NodePort 32621 -> sample-app Service -> application pod -> Spring Boot server.</p>
             </main></body></html>
-            """.formatted(cards(runtime), cards(infrastructure));
+            """;
+        return template.replace("__RUNTIME_CARDS__", cards(runtime))
+            .replace("__INFRASTRUCTURE_CARDS__", cards(infrastructure));
     }
 
     private String cards(Map<String, String> values) {
