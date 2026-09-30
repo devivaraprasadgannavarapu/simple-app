@@ -128,6 +128,14 @@ resource "aws_security_group" "kubernetes" {
     self        = true
   }
 
+  ingress {
+    description = "Application NodePort access"
+    from_port   = 30000
+    to_port     = 32767
+    protocol    = "tcp"
+    cidr_blocks = [var.ssh_allowed_cidr]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -212,9 +220,11 @@ resource "aws_iam_role_policy" "jenkins" {
       {
         Effect = "Allow"
         Action = [
+          "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability",
           "ecr:CompleteLayerUpload",
           "ecr:DescribeRepositories",
+          "ecr:GetDownloadUrlForLayer",
           "ecr:InitiateLayerUpload",
           "ecr:PutImage",
           "ecr:UploadLayerPart"
@@ -259,6 +269,14 @@ resource "aws_security_group" "jenkins" {
   }
 
   ingress {
+    description = "GitHub webhook delivery"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     description = "SSH administration"
     from_port   = 22
     to_port     = 22
@@ -272,6 +290,14 @@ resource "aws_security_group" "jenkins" {
     to_port     = 22
     protocol    = "tcp"
     self        = true
+  }
+
+  ingress {
+    description = "SonarQube inside VPC"
+    from_port   = 9000
+    to_port     = 9000
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {
